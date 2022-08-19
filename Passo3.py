@@ -33,7 +33,7 @@ erro = 1e-6
 norm = 1 
 
 #Definir o tamanho das amostras que serão avaliadas
-t_amostra = 1000
+t_amostra = 50
 
 #Variável para o critério de parada
 parada = 0
@@ -166,8 +166,8 @@ ax.plot(base, t.pdf(base, v_base, loc = locacao_base, scale = escala_base), 'r-'
         lw=3, alpha=0.6, label='Base')
 
 print("\n\n")
-print(rf'A locação da distribuição após o fit foi: u = {media_locacao_fit}')
-print(rf'A escala da distribuição após o fit foi: sigma^2 = {var_escala_fit}')
+print(rf'A locação da distribuição após o fit foi: u = {round(media_locacao_fit, 4)}')
+print(rf'A escala da distribuição após o fit foi: sigma^2 = {round(var_escala_fit, 4)}')
 print(rf'O grau de liberdade da distribuição após o fit foi: v = {v_base}')
 
 ax.hist(amostra_fit, bins = 500, density=(True), color = 'skyblue', rwidth=0.9, label = f'Amostras (n = {t_amostra})' )
