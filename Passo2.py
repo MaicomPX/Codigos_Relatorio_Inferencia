@@ -26,10 +26,10 @@ da amostra).
 
 
 #Definir o tamanho das amostras que serão avaliadas
-t_amostra = 50
+t_amostra = 1000
 
 #Definir a quantidade de vezes que a amostra deverá ser recuperada
-quant_iter = 10
+quant_iter = 100
 
 #Inserir n = 2 se deseja estimar mu e sigma2. Caso queira estimar o parâmetro v
 #defina n com qualquer valor diferente de 2
@@ -111,11 +111,13 @@ ax.plot(base, t.pdf(base, v_base, loc = locacao_base, scale = escala_base), 'r-'
         lw=5, alpha=0.6, label='Base')
 
 print("\n")
-print(rf'A locação da distribuição após o fit foi: u = {locacao_media}')
-print(rf'A escala da distribuição após o fit foi: sigma^2 = {escala_media}')
-print(rf'O grau de liberdade da distribuição após o fit foi: v = {v_media}')
+print(rf'A locação da distribuição após o fit foi: u = {round(locacao_media, 4)}')
+print(rf'A escala da distribuição após o fit foi: sigma^2 = {round(escala_media, 4)}')
+print(rf'O grau de liberdade da distribuição após o fit foi: v = {round(v_media, 4)}')
 
-ax.hist(amostra_fit, bins = 100, density=(True), color = 'skyblue', rwidth=0.9 )
-ax.set_xlim(locacao_media - 5*escala_media, locacao_media + 5*escala_media)
+ax.hist(amostra_fit, bins = 500, density=(True), color = 'skyblue', rwidth=0.9, label = f'Amostras (n = {t_amostra})' )
+print(len(amostra_fit))
+ax.set_xlim(locacao_media - 5*escala_base, locacao_media + 5*escala_base)
+ax.set_title('Histograma do Fit')
 ax.legend()
 plt.show()
