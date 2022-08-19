@@ -27,13 +27,13 @@ da amostra).
 '''
 
 #Definindo o erro para a parada do algoritmo EM
-erro = 1e-5
+erro = 1e-6
 
 #Criando a variável que receberá a norma dos parâmetros
 norm = 1 
 
 #Definir o tamanho das amostras que serão avaliadas
-t_amostra = 50
+t_amostra = 1000
 
 #Variável para o critério de parada
 parada = 0
