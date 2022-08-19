@@ -136,13 +136,9 @@ while parada == 0 :
         y = np.array([locacao_fit, escala_fit])
         
         theta_atual = np.array(Passo_E(y))
-        
-        log_theta_atual = np.log10(theta_atual)
-        log_theta_anterior = np.log10(theta_anterior)
-        
-        teta = log_theta_atual - log_theta_anterior
 
-        norm = np.linalg.norm(teta,2)
+
+        norm = np.linalg.norm(np.log10(theta_atual) - np.log10(theta_anterior),2)
         
         theta_anterior = theta_atual
         
