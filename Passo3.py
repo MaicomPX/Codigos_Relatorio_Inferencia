@@ -14,6 +14,7 @@ from scipy import stats
 from scipy.stats import t
 from scipy.optimize import minimize 
 import statistics as st
+import math
 
 
 '''
@@ -32,7 +33,7 @@ erro = 1e-5
 norm = 1 
 
 #Definir o tamanho das amostras que serão avaliadas
-t_amostra = 1000
+t_amostra = 50
 
 #Variável para o critério de parada
 parada = 0
@@ -118,7 +119,7 @@ while parada == 0 :
         locacao_fit.append(mv_modelo.x[0])
         escala_fit.append(mv_modelo.x[1])
         
-        teta_anterior = np.array([st.mean(locacao_fit), st.mean(escala_fit)])
+        theta_anterior = np.array([st.mean(locacao_fit), st.mean(escala_fit)])
     else:
         y = np.array([locacao_fit, escala_fit])
         palpite = Passo_E(y) #Primeiro Passo E (palpite dado a partir dos dados)
@@ -134,14 +135,16 @@ while parada == 0 :
         
         y = np.array([locacao_fit, escala_fit])
         
-        teta_atual = np.array(Passo_E(y))
+        theta_atual = np.array(Passo_E(y))
         
+        log_theta_atual = np.log10(theta_atual)
+        log_theta_anterior = np.log10(theta_anterior)
         
-        teta = teta_atual - teta_anterior
+        teta = log_theta_atual - log_theta_anterior
 
         norm = np.linalg.norm(teta,2)
         
-        teta_anterior = teta_atual
+        theta_anterior = theta_atual
         
         if(norm < erro) or (contador > max_iter):
             parada = 1
@@ -152,8 +155,8 @@ while parada == 0 :
     contador += 1
     print(contador)
         
-media_locacao_fit = teta_atual[0]
-var_escala_fit = teta_atual[1]
+media_locacao_fit = theta_atual[0]
+var_escala_fit = theta_atual[1]
 
 print('\n\n')
 print(f'Após {contador} a sequência convergiu.')
