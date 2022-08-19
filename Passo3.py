@@ -26,16 +26,19 @@ da amostra).
 '''
 
 #Definindo o erro para a parada do algoritmo EM
-erro = 1e-4
+erro = 1e-5
 
 #Criando a variável que receberá a norma dos parâmetros
 norm = 1 
 
 #Definir o tamanho das amostras que serão avaliadas
-t_amostra = 150
+t_amostra = 1000
 
-#Definir a quantidade de vezes que a amostra deverá ser recuperada
-quant_iter = 20
+#Variável para o critério de parada
+parada = 0
+
+#Definindo o número máximo de iterações
+max_iter = 10000
 
 #Inserir n = 2 se deseja estimar mu e sigma2. Caso queira estimar o parâmetro v
 #defina n com qualquer valor diferente de 2
@@ -46,8 +49,8 @@ n_iter = 200
 
 
 # Gerando uma amostra t-student com locação e escala (diferentes de 0 e 1) 
-locacao_base = 10
-escala_base = 3
+locacao_base = 32
+escala_base = 5
 v_base = 3 #df = degrees of freedom, representa o parâmetro (v) da distribuição t
 
 
@@ -69,10 +72,17 @@ def Passo_M(parametros):
   return neg_LMV
 
 
-#Gerando o chute inicial
-def Passo_E(x):
+#Gerando o primeiro palpite do Passo E
+def Passo_E0(x):
     u = np.mean(x)
     sigma2 = st.variance(x)
+    return (u, sigma2)
+
+
+#Calculando os palpites posteriores
+def Passo_E(y):
+    u = st.mean(y[0])
+    sigma2 = st.mean(y[1])
     return (u, sigma2)
     
 
@@ -91,61 +101,92 @@ contador = 0
 
 
 
-while norm > erro:
-    for i in range(quant_iter):
-        #Amostragem
-        data = t.rvs(v_base, size = t_amostra, loc = locacao_base, scale = escala_base)
+while parada == 0 :
+
+    #Amostragem
+    data = t.rvs(v_base, size = t_amostra, loc = locacao_base, scale = escala_base)
+    
+    
+    #Executando o Passo E
+    if contador == 0:
         
-        #Executando o Passo E
-        palpite = Passo_E(data)
+        palpite_inicial = Passo_E0(data) #Primeiro Passo E (palpite dado a partir dos dados)
+        mv_modelo = minimize(Passo_M, palpite_inicial, method='SLSQP', options={'maxiter':n_iter})
         
+        #Guardando os valores ajustados pelo modelo de Máxima Verossimilhança 
+        amostra_fit.extend(data)
+        locacao_fit.append(mv_modelo.x[0])
+        escala_fit.append(mv_modelo.x[1])
+        
+        teta_anterior = np.array([st.mean(locacao_fit), st.mean(escala_fit)])
+    else:
+        y = np.array([locacao_fit, escala_fit])
+        palpite = Passo_E(y) #Primeiro Passo E (palpite dado a partir dos dados)
         # "Minimizando" os parâmetros: função, "chute inicial", método utilizado
         # Método usado no cálculo do erro SLSQP = Programação Sequencial de Min Quadrad.
-        mv_modelo = minimize(Passo_M, palpite, method='SLSQP', options={'maxiter':n_iter}) 
+        mv_modelo = minimize(Passo_M, palpite, method='SLSQP', options={'maxiter':n_iter})
         
         
         #Guardando os valores ajustados pelo modelo de Máxima Verossimilhança 
         amostra_fit.extend(data)
         locacao_fit.append(mv_modelo.x[0])
         escala_fit.append(mv_modelo.x[1])
-    
-        # if n == 2:
-        #     v_fit.append(v_base)
-        # else:
-        #     v_fit.append(mv_modelo.x[2])
         
-
-    
-    #Calculando o primeiro passo do algoritmo EM
-    if contador == 0:
-        teta_anterior = np.array([st.mean(locacao_fit), st.mean(escala_fit)])
-        # print(teta_anterior)
-    else:
-        teta_atual = np.array([st.mean(locacao_fit), st.mean(escala_fit)])
-        # print(teta_atual)
+        y = np.array([locacao_fit, escala_fit])
+        
+        teta_atual = np.array(Passo_E(y))
+        
+        
         teta = teta_atual - teta_anterior
-        print(teta)
+
         norm = np.linalg.norm(teta,2)
+        
         teta_anterior = teta_atual
+        
+        if(norm < erro) or (contador > max_iter):
+            parada = 1
+        
+        # print(norm)
+    
+
     contador += 1
+    print(contador)
         
 media_locacao_fit = teta_atual[0]
 var_escala_fit = teta_atual[1]
+
+print('\n\n')
+print(f'Após {contador} a sequência convergiu.')
 
 
 fig, ax = plt.subplots(1, 1)
 base = np.linspace(media_locacao_fit - 5*escala_base, media_locacao_fit + 5*escala_base, 1000)
 ax.plot(base, t.pdf(base, v_base, loc = media_locacao_fit, scale = var_escala_fit), 'b-', 
-        lw=5, alpha=0.6, label='Fit')
+        lw=8, alpha=0.6, label='Fit')
 ax.plot(base, t.pdf(base, v_base, loc = locacao_base, scale = escala_base), 'r-', 
-        lw=5, alpha=0.6, label='Base')
+        lw=3, alpha=0.6, label='Base')
 
-print("\n")
+print("\n\n")
 print(rf'A locação da distribuição após o fit foi: u = {media_locacao_fit}')
 print(rf'A escala da distribuição após o fit foi: sigma^2 = {var_escala_fit}')
 print(rf'O grau de liberdade da distribuição após o fit foi: v = {v_base}')
 
-ax.hist(amostra_fit, bins = 100, density=(True), color = 'skyblue', rwidth=0.9 )
+ax.hist(amostra_fit, bins = 500, density=(True), color = 'skyblue', rwidth=0.9, label = f'Amostras (n = {t_amostra})' )
+print(len(amostra_fit))
 ax.set_xlim(media_locacao_fit - 5*escala_base, media_locacao_fit + 5*escala_base)
+ax.set_title('Histograma do Fit')
 ax.legend()
 plt.show()
+
+
+plt.figure('Medias das amostras')
+plt.title(f'Médias amostrais (n = {t_amostra})')
+plt.hist(locacao_fit, bins = 50, density=(True), label=r'$\mu$')
+plt.legend()
+
+
+
+plt.figure('Variancia das amostras')
+plt.title(f'Variâncias amostrais (n = {t_amostra})')
+plt.hist(escala_fit, bins = 50, density=(True), label=r'$\sigma^2$')
+plt.legend()
